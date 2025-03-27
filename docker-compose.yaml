@@ -1,0 +1,19 @@
+services:
+  glow:
+    build: .
+    container_name: glow
+    command: python3 manage.py runserver 0.0.0.0:${CONTAINER_PORT}
+    volumes:
+      - .:/glow
+      - ./staticfiles:/home/justine/glow/staticfiles
+    ports:
+      - "${HOST_PORT}:${CONTAINER_PORT}"
+    networks:
+      - mynetwork
+    restart: always
+    environment:
+      - TZ=Asia/Manila
+
+networks:
+  mynetwork:
+    driver: bridge
