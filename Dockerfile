@@ -3,6 +3,7 @@ RUN apt-get update
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
+RUN apt-get install -y pgbouncer
 RUN apt-get install -y python3.12
 RUN python3.12 --version
 RUN apt-get install -y python3.12-dev build-essential
@@ -20,5 +21,5 @@ COPY requirements.txt /api/
 RUN pip install -r requirements.txt
 COPY . /api/
 RUN apt-get install -y apt-utils vim curl
-EXPOSE 8000
+EXPOSE 8005
 

@@ -11,6 +11,7 @@ from .queries import (
     login,
     register,
     forgot_password,
+    getNewUsers
 )
 
 from .api.decorators import (
@@ -71,3 +72,11 @@ class ForgotPassword(APIView):
 
         data = forgot_password(email) 
         return Response(data)
+    
+class GetNewUsers(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request):
+        data = getNewUsers() 
+        return Response(data)
+

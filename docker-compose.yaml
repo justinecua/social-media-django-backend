@@ -1,4 +1,22 @@
 services:
+  pg_bouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: pg_bouncer
+    ports:
+      - "6432:6432"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      - mynetwork
+    restart: always
+
   glow:
     build: .
     container_name: glow

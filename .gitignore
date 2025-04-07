@@ -137,3 +137,5 @@ GitHub.sublime-settings
 .history
 
 db_postgre.json
+pgbouncer.ini
+userlist.txt
