@@ -13,7 +13,25 @@ services:
     restart: always
     environment:
       - TZ=Asia/Manila
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mynetwork
+    restart: always
+    environment:
+      - TZ=Asia/Manila
 
 networks:
   mynetwork:
     driver: bridge
+
+volumes:
+  redis_data:
