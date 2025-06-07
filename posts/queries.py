@@ -47,19 +47,20 @@ def getPosts(offset=0, limit=5):
                 a.profile_photo,
                 COUNT(DISTINCT glows.id) AS glow_count,
                 COUNT(DISTINCT comments.id) AS comment_count,
-                ARRAY_AGG(DISTINCT ph.link) AS photos
+                ARRAY_AGG(DISTINCT ph.link) AS photos,
+                ARRAY_AGG(DISTINCT glows.account_id) AS glowers
             FROM
-                glow.public.posts_post AS p
+                glow.glow.posts_post AS p
             LEFT JOIN
-                glow.public.accounts_account AS a ON p.account_id = a.id
+                glow.glow.accounts_account AS a ON p.account_id = a.id
             LEFT JOIN
-                glow.public.auth_user AS u ON a.auth_user_id = u.id
+                glow.glow.auth_user AS u ON a.auth_user_id = u.id
             LEFT JOIN
-                glow.public.posts_photo AS ph ON p.id = ph.post_id
+                glow.glow.posts_photo AS ph ON p.id = ph.post_id
             LEFT JOIN
-                glow.public.interactions_glow AS glows ON p.id = glows.post_id
+                glow.glow.interactions_glow AS glows ON p.id = glows.post_id
             LEFT JOIN
-                glow.public.interactions_comment AS comments ON p.id = comments.post_id
+                glow.glow.interactions_comment AS comments ON p.id = comments.post_id
             GROUP BY 
                 p.id, p.account_id, p.caption, p."dateTime", u.username, a.firstname, a.lastname, a.profile_photo
             ORDER BY 
@@ -70,6 +71,77 @@ def getPosts(offset=0, limit=5):
         connection = connections["default"]
         cursor = connection.cursor()
         cursor.execute(query)
+
+        results = [
+            dict(
+                (cursor.description[i][0], value if value is not None else "")
+                for i, value in enumerate(row)
+            )
+            for row in cursor.fetchall()
+        ]
+
+        for post in results:
+            if "dateTime" in post and isinstance(post["dateTime"], datetime):
+                post["dateTime"] = time_ago(post["dateTime"])
+            if "photos" in post and isinstance(post["photos"], list):
+                post["photos"] = [
+                    photo
+                    for photo in post["photos"]
+                    if photo and isinstance(photo, str) and photo.strip()
+                ]
+
+        return {'results': results}
+
+    except Exception as error:
+        print(f"Error: {error}")
+        return {'results': []}
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+def getPostsByUser(account_id):
+    try:
+        query = f"""
+            SELECT 
+                p.id,
+                p.account_id,
+                p.caption,
+                p."dateTime",
+                u.username,
+                a.firstname,
+                a.lastname,
+                a.profile_photo,
+                COUNT(DISTINCT glows.id) AS glow_count,
+                COUNT(DISTINCT comments.id) AS comment_count,
+                ARRAY_AGG(DISTINCT ph.link) AS photos,
+                ARRAY_AGG(DISTINCT glows.account_id) AS glowers
+            FROM
+                glow.glow.posts_post AS p
+            LEFT JOIN
+                glow.glow.accounts_account AS a ON p.account_id = a.id
+            LEFT JOIN
+                glow.glow.auth_user AS u ON a.auth_user_id = u.id
+            LEFT JOIN
+                glow.glow.posts_photo AS ph ON p.id = ph.post_id
+            LEFT JOIN
+                glow.glow.interactions_glow AS glows ON p.id = glows.post_id
+            LEFT JOIN
+                glow.glow.interactions_comment AS comments ON p.id = comments.post_id
+                            WHERE p.account_id = %s
+            GROUP BY 
+                p.id, p.account_id, p.caption, p."dateTime", u.username, a.firstname, a.lastname, a.profile_photo
+            ORDER BY 
+                p."dateTime" DESC
+
+
+        """
+
+        connection = connections["default"]
+        cursor = connection.cursor()
+        cursor.execute(query,(account_id,))
 
         results = [
             dict(

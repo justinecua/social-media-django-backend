@@ -125,7 +125,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
-            'options': '-c search_path=glow,public',  
+            'options': '-c search_path=glow,glow',  
         },
     }
 }
@@ -223,7 +223,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = f"Glow <{EMAIL_HOST_USER}>"
-
+MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
+MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
 
 SITE_NAME = 'Glow'
 
@@ -254,5 +255,5 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.43.245:3001",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # ⚠️ Only for development
+CORS_ALLOW_ALL_ORIGINS = True  
 

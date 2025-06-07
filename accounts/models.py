@@ -11,7 +11,7 @@ class Account(models.Model):
     ui_appearance = models.CharField(max_length=255, blank=True, default="")
     cover_photo = models.URLField(verbose_name="File URL", blank=True, default="")
     cover_photo_id_imagekit = models.CharField(max_length=355, null=True, blank=True, default="")
-    profile_photo = models.URLField(verbose_name="File URL", default="")
+    profile_photo = models.URLField(verbose_name="File URL", blank=True, null=True, default=None)
     profile_photo_id_imagekit = models.CharField(max_length=355, null=True, blank=True, default="")
     auth_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
     last_activity = models.DateTimeField(null=True, blank=True)
@@ -20,3 +20,10 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
 
+class PasswordReset(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token = models.TextField()
+    expires_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"Password reset token for {self.user.username}"

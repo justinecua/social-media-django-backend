@@ -17,6 +17,7 @@ from posts.services.external_feeds import (
 
 from .queries import (
     getPosts,
+    getPostsByUser
 )
 
 from .api.decorators import (
@@ -33,14 +34,12 @@ class GetPosts(APIView):
         data = getPosts(offset, limit)
         return Response(data)
 
-    
-class GetNewUsers(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+class GetPostsByUser(APIView):
+    permission_classes = (permissions.AllowAny,)
 
-    def get(self, request):
-        data = getNewUsers()
+    def get(self, request, account_id):
+        data = getPostsByUser(account_id)
         return Response(data)
-
 
 # External Api
 class GetJokes(APIView):

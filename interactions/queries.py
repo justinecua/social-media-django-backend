@@ -3,6 +3,8 @@ from django.db import connections
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
+from posts.queries import time_ago
+from datetime import datetime
 
 def countGlows(post_id):
     try:
@@ -101,11 +103,13 @@ def showComments(post_id):
                 c."dateTime",
                 u.username,
                 a.profile_photo
-            FROM glow.interactions_comment AS c
+            FROM glow.glow.interactions_comment AS c
             LEFT JOIN
-                glow.accounts_account AS a ON c.account_id = a.id
+                glow.glow.accounts_account AS a ON c.account_id = a.id
             LEFT JOIN
-                glow.auth_user AS u ON a.auth_user_id = u.id
+                glow.glow.auth_user AS u ON a.auth_user_id = u.id
+            WHERE c.post_id = %s
+            ORDER BY c."dateTime" ASC;
                 """
         connection = connections['default']
         cursor = connection.cursor()
@@ -118,6 +122,10 @@ def showComments(post_id):
             )
             for row in cursor.fetchall()
         ]
+        print(results)
+        for comment in results:
+            if "dateTime" in comment and isinstance(comment["dateTime"], datetime):
+                comment["dateTime"] = time_ago(comment["dateTime"])
 
         return results
 

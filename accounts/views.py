@@ -11,7 +11,8 @@ from .queries import (
     login,
     register,
     forgot_password,
-    getNewUsers
+    getNewUsers,
+    getProfile
 )
 
 from .api.decorators import (
@@ -38,8 +39,14 @@ class Login(APIView):
 
         user_data = login(username, password)
 
-        if user_data is None:
-            return Response({"detail": "Invalid username or password."}, status=401)
+        if user_data is None or user_data.get("error") == "internal_error":
+            return Response({"detail": "An error occurred."}, status=500)
+
+        if user_data.get("error") == "username_not_found":
+            return Response({"detail": "Username not found."}, status=404)
+
+        if user_data.get("error") == "password_incorrect":
+            return Response({"detail": "Password is incorrect."}, status=401)
 
         refresh = RefreshToken()
         refresh.payload.update({"user_id": user_data["id"], "username": user_data["username"]})
@@ -78,5 +85,12 @@ class GetNewUsers(APIView):
 
     def get(self, request):
         data = getNewUsers() 
+        return Response(data)
+
+class GetProfile(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, profile_id):
+        data = getProfile(profile_id)
         return Response(data)
 

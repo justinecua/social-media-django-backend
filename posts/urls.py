@@ -9,11 +9,13 @@ from .views import (
     GetRiddles,
     GetMemeFromReddit,
     GetRandomAnimeImage,
+    GetPostsByUser
 )
 
 
 urlpatterns = [
     path("getPosts/", GetPosts.as_view(), name="getPosts"),
+    path("getPostsByUser/<int:account_id>/", GetPostsByUser.as_view(), name="getPostsByUser"),
     path("getJokes/", GetJokes.as_view(), name="getJokes"),
     path("getUselessFacts/", GetUselessFacts.as_view(), name="getUselessFacts"),
     path("getAdvice/", GetAdvice.as_view(), name="getAdvice"),

@@ -52,11 +52,9 @@ class CountComments(APIView):
         return Response(data)
 
 class ShowComments(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.AllowAny,)
 
     @show_comments_decorator()
-    def get(self, request):
-        post_id = request.data.get("post_id") 
-
-        data = showComments(post_id) 
+    def get(self, request, post_id):
+        data = showComments(post_id)
         return Response(data)
