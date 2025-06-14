@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from posts.queries import time_ago
 from datetime import datetime
+import pytz
 
 def countGlows(post_id):
     try:
@@ -122,7 +123,6 @@ def showComments(post_id):
             )
             for row in cursor.fetchall()
         ]
-        print(results)
         for comment in results:
             if "dateTime" in comment and isinstance(comment["dateTime"], datetime):
                 comment["dateTime"] = time_ago(comment["dateTime"])
@@ -132,6 +132,38 @@ def showComments(post_id):
     except Exception as error:
         print(f"Error: {error}")
     finally:        
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+
+def addComment(comment, postId, accID):
+    connection = None
+    cursor = None
+    try:
+        now = datetime.now(pytz.utc)
+
+        connection = connections["default"]
+        cursor = connection.cursor()
+
+        glow_query = """
+            INSERT INTO glow.glow.interactions_comment (content, "dateTime", post_id, account_id )
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(glow_query, (comment, now, postId, accID))
+
+        connection.commit()
+        return {"status": "success", "message": "Comment added successfully3"}
+
+    except Exception as error:
+        print(f"Error: {error}")
+        if connection:
+            connection.rollback()
+        return {"status": "error", "message": "Something went wrong."}
+
+    finally:
         if cursor:
             cursor.close()
         if connection:

@@ -11,13 +11,15 @@ from posts.services.external_feeds import (
     getQuotes,
     getRiddle,
     getMemeFromReddit,
-    getRandomAnimeImage,
-
+    getRandomAnimeImage
 )
 
 from .queries import (
     getPosts,
-    getPostsByUser
+    getPostsByUser,
+    create_post,
+    sendGlow,
+    sendUnglow
 )
 
 from .api.decorators import (
@@ -31,14 +33,47 @@ class GetPosts(APIView):
     def get(self, request):
         offset = int(request.query_params.get('offset', 0))
         limit = int(request.query_params.get('limit', 5))
-        data = getPosts(offset, limit)
+        data = getPosts(offset, limit, request=request)
         return Response(data)
 
 class GetPostsByUser(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, account_id):
-        data = getPostsByUser(account_id)
+        data = getPostsByUser(account_id, request=request)
+        return Response(data)
+
+class CreatePost(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        accID = request.data.get("accID")
+        audience = request.data.get("audience")
+        caption = request.data.get("caption")
+        photos = request.data.get("photos", [])
+        taglist = request.data.get("taglist", [])
+
+        data = create_post(accID, audience, caption, photos, taglist, request=request)
+        return Response(data)
+
+class SendGlow(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        accID = request.data.get("accID")
+        postId = request.data.get("postId")
+
+        data = sendGlow(accID, postId)
+        return Response(data)
+
+class SendUnglow(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        accID = request.data.get("accID")
+        postId = request.data.get("postId")
+
+        data = sendUnglow(accID, postId)
         return Response(data)
 
 # External Api

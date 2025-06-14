@@ -14,6 +14,7 @@ import requests
 
 MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
 MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN")
+FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN")
 
 def get_local_ip():
     return socket.gethostbyname(socket.gethostname())
@@ -51,15 +52,28 @@ def login(username, password):
         connection = connections['default']
         cursor = connection.cursor()
 
-        # Fetch the user by username
         query = """
-            SELECT firstname, lastname, gender, bio, age, birthday, profile_photo, cover_photo, 
-                   cover_photo_id_imagekit, profile_photo_id_imagekit, username, password, date_joined, 
-                   glow.glow.auth_user.id
-            FROM glow.glow.accounts_account
-            INNER JOIN glow.glow.auth_user
-            ON glow.glow.accounts_account.auth_user_id = glow.glow.auth_user.id
-            WHERE username = %s
+                SELECT 
+                    aa.firstname, 
+                    aa.lastname, 
+                    aa.gender, 
+                    aa.bio, 
+                    aa.age, 
+                    aa.birthday, 
+                    aa.profile_photo, 
+                    aa.cover_photo, 
+                    aa.cover_photo_id_imagekit, 
+                    aa.profile_photo_id_imagekit, 
+                    au.username, 
+                    au.password, 
+                    au.date_joined, 
+                    aa.id AS account_id, 
+                    au.id AS user_id
+                FROM glow.glow.accounts_account aa
+                INNER JOIN glow.glow.auth_user au
+                    ON aa.auth_user_id = au.id
+                WHERE au.username = %s;
+
         """
         cursor.execute(query, (username,))
         user_row = cursor.fetchone()
@@ -164,9 +178,9 @@ def forgot_password(email):
 
         user_id, username = user
 
-        raw_token = secrets.token_urlsafe(32)  # Raw token for email link
-        hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()  # Securely store the hashed token
-        expires_at = timezone.now() + timezone.timedelta(hours=1)  # Token expires in 1 hour
+        raw_token = secrets.token_urlsafe(32)  
+        hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()  
+        expires_at = timezone.now() + timezone.timedelta(hours=1)  
 
         query_insert_token = """
             INSERT INTO glow.glow.accounts_passwordreset (user_id, token, expires_at)
@@ -178,7 +192,7 @@ def forgot_password(email):
         connection.commit()
 
         local_ip = get_local_ip()
-        reset_link = f"http://{local_ip}:8000/reset-password?token={raw_token}"
+        reset_link = f"http://{FRONTEND_DOMAIN}/resetpassword?token={raw_token}"
 
         response = send_mail_via_mailgun(
             subject="Password Reset Request",
@@ -203,6 +217,64 @@ def forgot_password(email):
         connection.rollback()
         print(f"Error: {error}")
         return {"message": "An error occurred.", "status": 500}
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def reset_password(token, new_password):
+    connection = connections['default']
+    cursor = connection.cursor()
+
+    try:
+        # Step 1: Hash the token
+        hashed_token = hashlib.sha256(token.encode()).hexdigest()
+
+        # Step 2: Find token record
+        query_select = """
+            SELECT user_id, expires_at
+            FROM glow.glow.accounts_passwordreset
+            WHERE token = %s
+        """
+        cursor.execute(query_select, (hashed_token,))
+        token_record = cursor.fetchone()
+
+        if not token_record:
+            return {"message": "Invalid or expired token.", "status": 400}
+
+        user_id, expires_at = token_record
+
+        # Step 3: Check expiration
+        if timezone.now() > expires_at:
+            return {"message": "Token has expired.", "status": 400}
+
+        # Step 4: Hash the new password and update user table
+        hashed_password = make_password(new_password)
+        query_update_password = """
+            UPDATE glow.glow.auth_user
+            SET password = %s
+            WHERE id = %s
+        """
+        cursor.execute(query_update_password, (hashed_password, user_id))
+
+        # Step 5: Invalidate/delete the reset token
+        query_delete_token = """
+            DELETE FROM glow.glow.accounts_passwordreset
+            WHERE user_id = %s
+        """
+        cursor.execute(query_delete_token, (user_id,))
+
+        # Step 6: Commit all changes
+        connection.commit()
+
+        return {"message": "Password has been reset successfully.", "status": 200}
+
+    except Exception as e:
+        connection.rollback()
+        print("Error in reset_password:", e)
+        return {"message": "An error occurred while resetting password.", "status": 500}
 
     finally:
         if cursor:
@@ -261,6 +333,27 @@ def getProfile(profile_id):
         ]
 
         return results
+
+    except Exception as error:
+        print(f"Error: {error}")
+    finally:        
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def getTotalGlowsPostByUser(account_id):
+    try:
+        query = f"""
+            SELECT COUNT(*) FROM glow.interactions_glow
+            LEFT JOIN glow.posts_post ON post_id = glow.posts_post.id
+            WHERE glow.posts_post.account_id =  %s 
+            """
+        connection = connections['default']
+        cursor = connection.cursor()
+        cursor.execute(query, (account_id,))
+        result = cursor.fetchone()
+        return result[0] if result else 0 
 
     except Exception as error:
         print(f"Error: {error}")

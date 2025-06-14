@@ -121,13 +121,14 @@ def getMemeFromReddit():
                     "username": meme.get("author"),
                     "caption": meme.get("title"),
                     "dateTime": timezone.now(),
-                    "photos": meme.get("url"),
+                    "photos": [meme.get("url")],
                 }
             ]
     except Exception as e:
         print(f"Error fetching meme: {e}")
         return []
 
+BACKEND_DOMAIN = "http://192.168.43.245:8001"
 
 def getRandomAnimeImage():
     try:
@@ -135,13 +136,16 @@ def getRandomAnimeImage():
         if response.status_code == 200:
             anime_folder = os.path.join(settings.MEDIA_ROOT, "anime")
             os.makedirs(anime_folder, exist_ok=True)
-            image_path = os.path.join(
-                anime_folder, f"anime_{timezone.now().strftime('%Y%m%d%H%M%S')}.jpg"
-            )
+
+            filename = f"anime_{timezone.now().strftime('%Y%m%d%H%M%S')}.jpg"
+            image_path = os.path.join(anime_folder, filename)
 
             with open(image_path, "wb") as f:
                 f.write(response.content)
-            image_url = os.path.relpath(image_path, settings.MEDIA_ROOT)
+
+            # Build relative and full URL
+            relative_url = f"{settings.MEDIA_URL}anime/{filename}"
+            full_url = f"{BACKEND_DOMAIN}{relative_url}"
 
             return [
                 {
@@ -149,7 +153,7 @@ def getRandomAnimeImage():
                     "username": "",
                     "caption": "",
                     "dateTime": timezone.now(),
-                    "photos": f"{settings.MEDIA_URL}{image_url}",
+                    "photos": [full_url],  # 👈 Always return as array
                 }
             ]
     except Exception as e:

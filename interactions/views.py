@@ -11,6 +11,7 @@ from .queries import (
     getProfileGlows,
     countComments,
     showComments,
+    addComment
 )
 
 from .api.decorators import (
@@ -57,4 +58,15 @@ class ShowComments(APIView):
     @show_comments_decorator()
     def get(self, request, post_id):
         data = showComments(post_id)
+        return Response(data)
+
+class AddComment(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        comment = request.data.get("comment")
+        accID = request.data.get("accID")
+        postId = request.data.get("postId")
+
+        data = addComment(comment, postId, accID)
         return Response(data)
