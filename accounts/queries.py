@@ -229,10 +229,10 @@ def reset_password(token, new_password):
     cursor = connection.cursor()
 
     try:
-        # Step 1: Hash the token
+        #Hash the token
         hashed_token = hashlib.sha256(token.encode()).hexdigest()
 
-        # Step 2: Find token record
+        #Find token record
         query_select = """
             SELECT user_id, expires_at
             FROM glow.glow.accounts_passwordreset
@@ -246,11 +246,11 @@ def reset_password(token, new_password):
 
         user_id, expires_at = token_record
 
-        # Step 3: Check expiration
+        #Check expiration
         if timezone.now() > expires_at:
             return {"message": "Token has expired.", "status": 400}
 
-        # Step 4: Hash the new password and update user table
+        # Hash new password and update user table
         hashed_password = make_password(new_password)
         query_update_password = """
             UPDATE glow.glow.auth_user
@@ -259,14 +259,12 @@ def reset_password(token, new_password):
         """
         cursor.execute(query_update_password, (hashed_password, user_id))
 
-        # Step 5: Invalidate/delete the reset token
+        # Invalidate/delete the reset token
         query_delete_token = """
             DELETE FROM glow.glow.accounts_passwordreset
             WHERE user_id = %s
         """
         cursor.execute(query_delete_token, (user_id,))
-
-        # Step 6: Commit all changes
         connection.commit()
 
         return {"message": "Password has been reset successfully.", "status": 200}

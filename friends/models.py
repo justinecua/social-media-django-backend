@@ -8,6 +8,9 @@ class Friend(models.Model):
     date_friend_request = models.DateTimeField(auto_now_add=True, null=True)
     date_became_friends = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        unique_together = ('user', 'friend')
+    
     def __str__(self):
         return f"{self.user.firstname} sent a friend request to {self.friend.firstname}"
 
