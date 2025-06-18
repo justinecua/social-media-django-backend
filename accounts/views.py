@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 from .queries import (
@@ -53,6 +55,16 @@ class Login(APIView):
 
         refresh = RefreshToken()
         refresh.payload.update({"user_id": user_data["user_id"], "username": user_data["username"]})
+
+        #Websocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "global",
+            {
+                "type": "user_logged_in",
+                "username": username,
+            }
+        )
 
         tokens = {
             "refresh": str(refresh),

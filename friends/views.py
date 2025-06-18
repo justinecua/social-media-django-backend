@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 
 from .queries import (
-    getTotalFriends
+    getTotalFriends,
+    checkUserFriendRequest
 )
 
 class GetTotalFriends(APIView):
@@ -12,4 +13,11 @@ class GetTotalFriends(APIView):
 
     def get(self, request, account_id):
         data = getTotalFriends(account_id) 
+        return Response(data)
+
+class CheckUserFriendRequest(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, friend_id, accId):
+        data = checkUserFriendRequest(friend_id, accId) 
         return Response(data)

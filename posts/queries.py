@@ -25,7 +25,7 @@ def time_ago(post_datetime):
         return f"• {hours} hr{'s' if hours != 1 else ''} ago"
     elif time_diff.total_seconds() < 604800:
         days = int(time_diff.total_seconds() / 86400)
-        return f"• {days} d{'s' if days != 1 else ''} ago"
+        return f"• {days}d{'' if days != 1 else ''} ago"
     elif time_diff.total_seconds() < 2592000:
         weeks = int(time_diff.total_seconds() / 604800)
         return f"• {weeks} wk{'s' if weeks != 1 else ''} ago"
@@ -194,7 +194,6 @@ def create_post(accID, audience, caption, photos, taglist, request=None):
         cursor.execute(post_query, (accID, audience, caption, now))
         post_id = cursor.fetchone()[0]
 
-        # Insert tags and into tag_post
         for tag_name in taglist:
             cursor.execute("SELECT id FROM glow.glow.posts_tag WHERE tag = %s", (tag_name,))
             result = cursor.fetchone()
@@ -206,10 +205,8 @@ def create_post(accID, audience, caption, photos, taglist, request=None):
 
             cursor.execute("INSERT INTO glow.glow.posts_tag_post (tag_id, post_id) VALUES (%s, %s)", (tag_id, post_id))
 
-        # Create folders if not exist
         os.makedirs(os.path.join(settings.MEDIA_ROOT, 'photos'), exist_ok=True)
 
-        # Save and insert photos
         for photo in photos:
             name = photo.get("name")
             base64_data = photo.get("origurl").split(",")[1]
@@ -225,7 +222,6 @@ def create_post(accID, audience, caption, photos, taglist, request=None):
             media_link = os.path.join(settings.MEDIA_URL, photo_path)
             cursor.execute("INSERT INTO glow.glow.posts_photo (link, post_id) VALUES (%s, %s)", (media_link, post_id))
 
-        # Get user info
         cursor.execute("""
             SELECT u.id, u.username, a.firstname, a.lastname, a.profile_photo
             FROM glow.glow.accounts_account a
@@ -235,18 +231,15 @@ def create_post(accID, audience, caption, photos, taglist, request=None):
         user_row = cursor.fetchone()
         user_id, username, firstname, lastname, profile_photo = user_row if user_row else (None, "", "", "", "")
 
-        # Get photos
         cursor.execute("SELECT id, link FROM glow.posts_photo WHERE post_id = %s", (post_id,))
         photos_data = [request.build_absolute_uri(link) for _, link in cursor.fetchall()]
 
-        # Get counts
         cursor.execute("SELECT COUNT(*) FROM glow.glow.interactions_comment WHERE post_id = %s", (post_id,))
         comment_count = cursor.fetchone()[0]
 
         cursor.execute("SELECT COUNT(*) FROM glow.glow.interactions_glow WHERE post_id = %s", (post_id,))
         glow_count = cursor.fetchone()[0]
 
-        # Compose the simplified expected response
         response = {
             "account_id": accID,
             "caption": caption,
@@ -341,3 +334,4 @@ def sendUnglow(accID, postId):
             cursor.close()
         if connection:
             connection.close()
+

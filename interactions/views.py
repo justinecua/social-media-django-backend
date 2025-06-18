@@ -70,3 +70,4 @@ class AddComment(APIView):
 
         data = addComment(comment, postId, accID)
         return Response(data)
+    
