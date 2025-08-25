@@ -14,6 +14,8 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
+from corsheaders.defaults import default_headers
+
 
 load_dotenv()
 
@@ -67,6 +69,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+     'accounts.middleware.JWTTokenCookieMiddleware', 
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     'django.middleware.security.SecurityMiddleware',
@@ -249,16 +252,31 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),  
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),  
-    'BLACKLIST_AFTER_ROTATION': True,
+    "AUTH_COOKIE": "access_token", 
+    "AUTH_COOKIE_SECURE": False,   
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SAMESITE": "Lax",
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3001",
-    "http://192.168.43.245:3001",
+    "http://localhost:5173",  # 👈 your frontend URL
+    "http://127.0.0.1:5173",
+    "http://192.168.43.245:5173",  # if you access via LAN
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "X-CSRFToken",
+]
+
+
+# CORS_ALLOW_ALL_ORIGINS = True  
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

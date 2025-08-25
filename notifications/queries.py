@@ -1,7 +1,7 @@
 
 from django.db import connections
 from posts.queries import time_ago
-from datetime import datetime
+from datetime import datetime, date
 
 def countNotifications(account_id):
     try:
@@ -27,30 +27,43 @@ def countNotifications(account_id):
 
 def showNotificationsByUser(account_id):
     try:
-        query = f"""
-                SELECT * FROM glow.glow.notifications_notification
-                WHERE notif_to_id = %s
-                """
+        query = """
+            SELECT * FROM glow.glow.notifications_notification 
+            LEFT JOIN glow.glow.accounts_account 
+            ON notif_from_id = glow.glow.accounts_account.id
+            WHERE notif_to_id = %s
+        """
         connection = connections['default']
         cursor = connection.cursor()
         cursor.execute(query, (account_id,))
 
-        results = [
-            dict(
-                (cursor.description[i][0], value if value is not None else "")
-                for i, value in enumerate(row)
-            )
-            for row in cursor.fetchall()
-        ]
-        for notif in results:
-            if "created_at" in notif and isinstance(notif["created_at"], datetime):
-                notif["created_at"] = time_ago(notif["created_at"])
+        columns = [col[0] for col in cursor.description]
+        results = []
+
+        for row in cursor.fetchall():
+            notif = {}
+            for i, value in enumerate(row):
+                col_name = columns[i]
+
+                if col_name == "created_at" and isinstance(value, datetime):
+                    notif[col_name] = time_ago(value)
+
+                elif isinstance(value, (datetime, date)):
+                    notif[col_name] = value.isoformat()
+
+                elif value is None:
+                    notif[col_name] = ""
+
+                else:
+                    notif[col_name] = value
+
+            results.append(notif)
 
         return results
 
     except Exception as error:
         print(f"Error: {error}")
-    finally:        
+    finally:
         if cursor:
             cursor.close()
         if connection:
