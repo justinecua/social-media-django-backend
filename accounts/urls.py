@@ -10,13 +10,16 @@ from .views import (
     GetTotalGlowsPostByUser,
     Logout,
     ResetPassword,
+    MeView,
+    CookieTokenRefreshView
     )
 
 urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'), 
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),   
+    path('token/refresh/', CookieTokenRefreshView.as_view(), name='token_refresh'),
     path('getAllAccounts/', GetAllAccounts.as_view(), name='getAllAccounts'),
     path('login/', Login.as_view(), name='login'),
+    path("me/", MeView.as_view(), name="me"),
     path('logout/', Logout.as_view(), name='logout'),
     path('register/', Register.as_view(), name='register'), 
     path('forgotPassword/', ForgotPassword.as_view(), name='forgotPassword'), 

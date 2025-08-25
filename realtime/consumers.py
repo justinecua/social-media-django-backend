@@ -35,7 +35,6 @@ class GlobalConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-    # Checks what type of event was sent, calls the correct function
     async def receive(self, text_data):
         data = json.loads(text_data)
         event_type = data.get("type")
@@ -47,7 +46,6 @@ class GlobalConsumer(AsyncWebsocketConsumer):
             result = await sync_to_async(handler, thread_sensitive=True)(friend_id, user_id)
             await self.notify_both(event_type, result, user_id, friend_id)
 
-    # Sends message to both users
     async def notify_both(self, event_type, result, user_id, friend_id):
         for uid, fid in [(user_id, friend_id), (friend_id, user_id)]:
             await self.channel_layer.group_send(
@@ -69,7 +67,6 @@ class GlobalConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-            # Notify receiver
             notification_count = await sync_to_async(countNotifications)(friend_id)
             notifications = await sync_to_async(showNotificationsByUser)(friend_id)
 
@@ -83,7 +80,6 @@ class GlobalConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    #Functions to handle what happens when the group message is received
     async def add_friend_result(self, event):
         await self.send(text_data=json.dumps(event))
 
@@ -102,8 +98,6 @@ class GlobalConsumer(AsyncWebsocketConsumer):
     async def new_notification(self, event):
         await self.send(text_data=json.dumps({
             "type": "notification",
-            "status": event["status"],
-            "message": event["message"],
             "from_user_id": event["from_user_id"],
             "count": event["count"],
             "notifications": event["notifications"]
